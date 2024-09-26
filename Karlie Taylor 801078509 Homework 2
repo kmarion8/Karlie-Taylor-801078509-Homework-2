@@ -1,0 +1,315 @@
+#Problem 1
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+#Loading the Dataset
+url = "https://github.com/HamedTabkhi/Intro-to-ML/raw/main/Dataset/Housing.csv"
+data = pd.read_csv(url)
+
+#Convert Categorical Features into Binary Columns
+data = pd.get_dummies(data, drop_first=True)
+
+#Update Features for Problem 1.a and 1.b
+features_a = ['area', 'bedrooms', 'bathrooms', 'stories', 'parking']
+#Update these features based on the binary columns
+features_b = ['area', 'bedrooms', 'bathrooms', 'stories', 'parking', 
+              'mainroad_yes', 'guestroom_yes', 'basement_yes', 'hotwaterheating_yes', 
+              'airconditioning_yes', 'prefarea_yes']
+
+#Standardize the Data
+scaler = StandardScaler()
+
+#Define a function for Gradient Descent
+def gradient_descent(X, y, learning_rate, epochs):
+    m, n = X.shape
+    theta = np.zeros(n)
+    losses = []
+
+    for epoch in range(epochs):
+        predictions = X.dot(theta)
+        errors = predictions - y
+        loss = (1/(2*m)) * np.sum(errors ** 2)
+        losses.append(loss)
+
+        gradients = (1/m) * X.T.dot(errors)
+        theta = theta - learning_rate * gradients
+
+    return theta, losses
+
+#Implement Linear Regression for Problem 1.a and 1.b
+def linear_regression(features, target, learning_rate, epochs):
+    #Select features and target variable
+    X = data[features]
+    y = data[target]
+    
+    #Split into train and test
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    #Normalize features
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    #Add a bias term (column of ones) to the features
+    X_train = np.c_[np.ones(X_train.shape[0]), X_train]
+    X_test = np.c_[np.ones(X_test.shape[0]), X_test]
+
+    #Perform Gradient Descent
+    theta, train_losses = gradient_descent(X_train, y_train, learning_rate, epochs)
+    
+    #Calculate validation loss
+    val_predictions = X_test.dot(theta)
+    val_loss = (1/(2*len(y_test))) * np.sum((val_predictions - y_test) ** 2)
+    
+    return theta, train_losses, val_loss
+
+#Problem 1.a: Define Variables and Train Model
+learning_rate = 0.05
+epochs = 1000
+target = 'price'
+
+# Train and evaluate the model
+theta_a, train_losses_a, val_loss_a = linear_regression(features_a, target, learning_rate, epochs)
+
+#Problem 1.b: Train and evaluate the model
+theta_b, train_losses_b, val_loss_b = linear_regression(features_b, target, learning_rate, epochs)
+
+# Plotting Training Losses
+plt.figure(figsize=(10, 6))
+plt.plot(range(epochs), train_losses_a, label='Training Loss (1.a)')
+plt.plot(range(epochs), train_losses_b, label='Training Loss (1.b)')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.title('Training Loss over Epochs for Problems 1.a and 1.b')
+plt.legend()
+plt.show()
+
+print(f"Validation Loss for Problem 1.a: {val_loss_a}")
+print(f"Validation Loss for Problem 1.b: {val_loss_b}")
+
+#Problem 2
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+
+#Loading the Dataset
+url = "https://github.com/HamedTabkhi/Intro-to-ML/raw/main/Dataset/Housing.csv"
+data = pd.read_csv(url)
+
+#Convert Categorical Features into Binary Columns
+data = pd.get_dummies(data, drop_first=True)
+
+#Define Features for Problem 2a and 2b
+features_a = ['area', 'bedrooms', 'bathrooms', 'stories', 'parking']
+features_b = ['area', 'bedrooms', 'bathrooms', 'stories', 'parking', 
+              'mainroad_yes', 'guestroom_yes', 'basement_yes', 'hotwaterheating_yes', 
+              'airconditioning_yes', 'prefarea_yes']
+
+#Gradient Descent Implementation
+def gradient_descent(X, y, learning_rate, epochs):
+    m, n = X.shape
+    theta = np.zeros(n)
+    losses = []
+
+    for epoch in range(epochs):
+        predictions = X.dot(theta)
+        errors = predictions - y
+        loss = (1/(2*m)) * np.sum(errors ** 2)
+        losses.append(loss)
+
+        gradients = (1/m) * X.T.dot(errors)
+        theta = theta - learning_rate * gradients
+
+    return theta, losses
+
+#Implement Linear Regression for Different Preprocessing Approaches
+def linear_regression(features, target, learning_rate, epochs, scale_method):
+    X = data[features]
+    y = data[target]
+
+    #Train-Test Split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    #Preprocess Data Using the Selected Scaling Method
+    if scale_method == 'standardize':
+        scaler = StandardScaler()
+    elif scale_method == 'normalize':
+        scaler = MinMaxScaler()
+    else:
+        raise ValueError("scale_method must be 'standardize' or 'normalize'")
+        
+    #Scaling
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    #Add Bias Term
+    X_train = np.c_[np.ones(X_train.shape[0]), X_train]
+    X_test = np.c_[np.ones(X_test.shape[0]), X_test]
+
+    #Perform Gradient Descent
+    theta, train_losses = gradient_descent(X_train, y_train, learning_rate, epochs)
+
+    #Calculate Validation Loss
+    val_predictions = X_test.dot(theta)
+    val_loss = (1/(2*len(y_test))) * np.sum((val_predictions - y_test) ** 2)
+    
+    return theta, train_losses, val_loss
+
+#Problem 2a Both Scaling Approaches
+learning_rate = 0.05
+epochs = 1000
+target = 'price'
+
+#Standardization Features
+_, train_losses_std_a, val_loss_std_a = linear_regression(features_a, target, learning_rate, epochs, scale_method='standardize')
+
+# Normalization Features
+_, train_losses_norm_a, val_loss_norm_a = linear_regression(features_a, target, learning_rate, epochs, scale_method='normalize')
+
+#Problem 2b Both Scaling Approaches
+#Standardization Features
+_, train_losses_std_b, val_loss_std_b = linear_regression(features_b, target, learning_rate, epochs, scale_method='standardize')
+
+# Normalization Features
+_, train_losses_norm_b, val_loss_norm_b = linear_regression(features_b, target, learning_rate, epochs, scale_method='normalize')
+
+#Plotting Results for Problem 2a
+plt.figure(figsize=(12, 6))
+plt.subplot(1, 2, 1)
+plt.plot(range(epochs), train_losses_std_a, label='Training Loss (Standardization)', color='blue')
+plt.plot(range(epochs), train_losses_norm_a, label='Training Loss (Normalization)', color='green')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.title('Training Loss for Problem 2a')
+plt.legend()
+
+#Plotting Results for Problem 2b
+plt.subplot(1, 2, 2)
+plt.plot(range(epochs), train_losses_std_b, label='Training Loss (Standardization)', color='blue')
+plt.plot(range(epochs), train_losses_norm_b, label='Training Loss (Normalization)', color='red')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.title('Training Loss for Problem 2b')
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+#Print Validation Losses for Comparison
+print(f"Validation Loss for Problem 2a (Standardization): {val_loss_std_a}")
+print(f"Validation Loss for Problem 2a (Normalization): {val_loss_norm_a}")
+print(f"Validation Loss for Problem 2b (Standardization): {val_loss_std_b}")
+print(f"Validation Loss for Problem 2b (Normalization): {val_loss_norm_b}")
+
+
+#Problem 3
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+
+#Loading the Dataset
+url = "https://github.com/HamedTabkhi/Intro-to-ML/raw/main/Dataset/Housing.csv"
+data = pd.read_csv(url)
+
+#Convert Categorical Features into Binary Columns
+data = pd.get_dummies(data, drop_first=True)
+
+#Features for Problem 3a and 3b
+features_a = ['area', 'bedrooms', 'bathrooms', 'stories', 'parking']
+features_b = ['area', 'bedrooms', 'bathrooms', 'stories', 'parking', 
+              'mainroad_yes', 'guestroom_yes', 'basement_yes', 'hotwaterheating_yes', 
+              'airconditioning_yes', 'prefarea_yes']
+
+#Define a function for Regularized Gradient Descent
+def regularized_gradient_descent(X, y, learning_rate, epochs, lambda_reg):
+    m, n = X.shape
+    theta = np.zeros(n)
+    losses = []
+
+    for epoch in range(epochs):
+        predictions = X.dot(theta)
+        errors = predictions - y
+        loss = (1/(2*m)) * np.sum(errors ** 2) + (lambda_reg/(2*m)) * np.sum(theta[1:] ** 2)
+        losses.append(loss)
+
+        gradients = (1/m) * X.T.dot(errors)
+        gradients[1:] += (lambda_reg/m) * theta[1:]
+        
+        theta = theta - learning_rate * gradients
+
+    return theta, losses
+
+#Implement Linear Regression for Problem 3 with Regularization
+def linear_regression_regularized(features, target, learning_rate, epochs, scale_method, lambda_reg):
+    X = data[features]
+    y = data[target]
+
+    #Split into train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    #Preprocess data using the selected scaling method
+    if scale_method == 'standardize':
+        scaler = StandardScaler()
+    elif scale_method == 'normalize':
+        scaler = MinMaxScaler()
+    else:
+        raise ValueError("scale_method must be 'standardize' or 'normalize'")
+        
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    #Add Bias Term
+    X_train = np.c_[np.ones(X_train.shape[0]), X_train]
+    X_test = np.c_[np.ones(X_test.shape[0]), X_test]
+
+    #Regularized Gradient Descent
+    theta, train_losses = regularized_gradient_descent(X_train, y_train, learning_rate, epochs, lambda_reg)
+
+    #Calculate Validation Loss (without regularization)
+    val_predictions = X_test.dot(theta)
+    val_loss = (1/(2*len(y_test))) * np.sum((val_predictions - y_test) ** 2)
+    
+    return theta, train_losses, val_loss
+
+#Problem 3a: Apply Regularization to Problem 1.a Features
+learning_rate = 0.05
+epochs = 1000
+lambda_reg = 0.1  
+target = 'price'
+best_scaling_approach = 'standardize'
+
+#Train and evaluate the model for Problem 3a
+theta_reg_a, train_losses_reg_a, val_loss_reg_a = linear_regression_regularized(features_a, target, learning_rate, epochs, best_scaling_approach, lambda_reg)
+
+#Problem 3b: Apply Regularization to Problem 1.b Features
+theta_reg_b, train_losses_reg_b, val_loss_reg_b = linear_regression_regularized(features_b, target, learning_rate, epochs, best_scaling_approach, lambda_reg)
+
+#Results for Problem 3a and 3b
+plt.figure(figsize=(12, 6))
+plt.subplot(1, 2, 1)
+plt.plot(range(epochs), train_losses_reg_a, label='Training Loss (Regularized)', color='blue')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.title('Training Loss for Problem 3a (Regularized)')
+plt.legend()
+
+plt.subplot(1, 2, 2)
+plt.plot(range(epochs), train_losses_reg_b, label='Training Loss (Regularized)', color='red')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.title('Training Loss for Problem 3b (Regularized)')
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+#Print Validation Losses for Comparison
+print(f"Validation Loss for Problem 3a (Regularized): {val_loss_reg_a}")
+print(f"Validation Loss for Problem 3b (Regularized): {val_loss_reg_b}")
